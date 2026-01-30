@@ -44,7 +44,7 @@ func (service *RecetaService) Crear(req dtos.RecetaRequest) (dtos.RecetaResponse
 	}
 
 	// Documento a persistir
-	doc := bson.M{
+	receta:models.Receta{
 		"Nombre":         req.Nombre,
 		"Categoria":      req.Categoria,
 		"Ingredientes":   req.Ingredientes,
@@ -69,8 +69,14 @@ func (service *RecetaService) Crear(req dtos.RecetaRequest) (dtos.RecetaResponse
 
 var total int
 
-func (service *RecetaService) ListarPaginado(limit int, offset int) ([]models.Receta, error) {
+func (service *RecetaService) ListarPaginado(limit int, offset int) ([]dtos.ListarPaginadoResponse, error) {
 
+	ctx := context.Background()
+
+	total, err := s.collection.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return dtos.ListarPaginadoResponse{}, err
+	}
 	opts := options.Find()
 	opts.SetLimit(int64(limit))
 	opts.SetSkip(int64(offset))
@@ -81,82 +87,74 @@ func (service *RecetaService) ListarPaginado(limit int, offset int) ([]models.Re
 	}
 	defer cursor.Close(context.Background())
 
-	var resultado []models.Receta
+	var items []dtos.RecetaResponse
 
 	for cursor.Next(context.Background()) {
 
-		var doc struct {
-			ID            primitive.ObjectID `bson:"_id"`
-			Nombre        string             `bson:"nombre"`
-			Categoria     string             `bson:"categoria"`
-			Ingredientes  []dtos.Ingrediente `bson:"ingredientes"`
-			FechaCreacion time.Time          `bson:"fechaCreacion"`
-			IdUsuario     primitive.ObjectID `bson:"idUsuario"`
+	var r models.Receta
+		if err := cursor.Decode(&r); err != nil {
+			return dtos.ListarPaginadoResponse{}, err
 		}
 
-		if err := cursor.Decode(&doc); err != nil {
-			return nil, err
-		}
-
-		resultado = append(resultado, models.Receta{
-			ID:            doc.ID,
-			Nombre:        doc.Nombre,
-			Categoria:     doc.Categoria,
-			FechaCreacion: doc.FechaCreacion,
+		items = append(items, dtos.RecetaResponse{
+			Id:            r.ID.Hex(),
+			Nombre:        r.Nombre,
+			Categoria:     r.Categoria,
+			Ingredientes:  r.Ingredientes,
+			FechaCreacion: r.FechaCreacion,
 		})
+		return dtos.ListarPaginadoResponse{
+		Total: int(total),
+		Items: items,
+	}, nil
 	}
-
-	return resultado, nil
-}
+	}
 func (service *RecetaService) FiltrarRecetasPorNombre(nombre string) ([]models.Receta, error) {
 
 	if nombre == "" {
 		return nil, errors.New("El estado es obligatorio")
 	}
 
-	collection := service.collection
-
+	// Búsqueda parcial e insensible a mayúsculas
 	filter := bson.M{
-		"nombre": nombre,
+		"nombre": bson.M{
+			"$regex":   nombre,
+			"$options": "i",
+		},
 	}
 
-	cursor, err := collection.Find(context.TODO(), filter)
+	cursor, err := s.collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(context.Background())
 
-	var resultado []models.Receta
-	if err := cursor.All(context.TODO(), &resultado); err != nil {
+	var recetas []models.Receta
+	if err := cursor.All(context.Background(), &recetas); err != nil {
 		return nil, err
 	}
-
-	return resultado, nil
+	return recetas, nil
 }
-func (service *RecetaService) FiltrarRecetasPorID(Id string) ([]models.Receta, error) {
-
-	if Id == "" {
-		return nil, errors.New("El id es obligatorio")
-	}
-
-	collection := service.collection
-
-	filter := bson.M{
-		"Id": Id,
-	}
-
-	cursor, err := collection.Find(context.TODO(), filter)
+	
+func (s *RecetaService) FiltrarRecetasPorID(id string) (dtos.RecetaResponse, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.TODO())
-
-	var resultado []models.Receta
-	if err := cursor.All(context.TODO(), &resultado); err != nil {
-		return nil, err
+		return dtos.RecetaResponse{}, errors.New("id inválido")
 	}
 
-	return resultado, nil
+	var r models.Receta
+	err = s.collection.FindOne(context.Background(), bson.M{"_id": objID}).Decode(&r)
+	if err != nil {
+		return dtos.RecetaResponse{}, err
+	}
+
+	return dtos.RecetaResponse{
+		Id:            r.ID.Hex(),
+		Nombre:        r.Nombre,
+		Categoria:     r.Categoria,
+		Ingredientes:  r.Ingredientes,
+		FechaCreacion: r.FechaCreacion,
+	}, nil
 }
 func (service *RecetaService) FiltrarRecetasPorCategoria(categoria string) ([]models.Receta, error) {
 
@@ -167,7 +165,7 @@ func (service *RecetaService) FiltrarRecetasPorCategoria(categoria string) ([]mo
 	collection := service.collection
 
 	filter := bson.M{
-		"Categoria": categoria,
+		"categoria": categoria,
 	}
 
 	cursor, err := collection.Find(context.TODO(), filter)

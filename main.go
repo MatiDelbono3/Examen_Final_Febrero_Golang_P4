@@ -26,10 +26,10 @@ func main() {
 
 	handler := handlers.NewRecetaHandler(service)
 
-	r.POST("/receta", handler.Crear)
-	r.GET("/receta", handler.ListarPaginado)
-	r.GET("/receta:/categoria", handler.FiltrarRecetasPorCategoria)
-	r.GET("/receta/:/Nombre", handler.FiltrarRecetasPorNombre)
-	r.GET("/receta/:/ID", handler.FiltrarRecetasPorID)
+	r.POST("/recetas", handler.Crear)
+	r.GET("/recetas", handler.ListarPaginado)
+	r.GET("/receta/:categoria", handler.FiltrarRecetasPorCategoria)
+	r.GET("/receta/:Nombre", handler.FiltrarRecetasPorNombre)
+	r.GET("/receta/:ID", handler.FiltrarRecetasPorID)
 	r.Run(":8080")
 }

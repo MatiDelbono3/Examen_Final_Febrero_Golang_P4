@@ -60,42 +60,30 @@ func (handlers *RecetaHandler) ListarPaginado(c *gin.Context) {
 }
 
 func (handlers *RecetaHandler) FiltrarRecetasPorCategoria(c *gin.Context) {
-	var request models.Receta
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := handlers.service.FiltrarRecetasPorCategoria(request.Categoria)
+	categoria:=c.Param("categoria")
+	resp, err := h.service.FiltrarRecetasPorNombre(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, resp)
 }
 func (handlers *RecetaHandler) FiltrarRecetasPorNombre(c *gin.Context) {
-	var request models.Receta
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := handlers.service.FiltrarRecetasPorNombre(request.Nombre)
+	nombre:=c.Param("nombre")
+	resp, err := h.service.FiltrarRecetasPorNombre(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, resp)
 }
 func (handlers *RecetaHandler) FiltrarRecetasPorID(c *gin.Context) {
-	var request models.Receta
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := handlers.service.FiltrarRecetasPorNombre(string(request.ID.Hex()))
+	id := c.Param("id")
+	resp, err := h.service.FiltrarRecetasPorID(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 

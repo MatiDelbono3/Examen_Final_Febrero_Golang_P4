@@ -1,5 +1,5 @@
 package dtos
 
 type ListarPorNombreResponse struct {
-	Items []RecetaResponse `json:"Items"`
+	Receta RecetaResponse `json:"receta"`
 }

@@ -2,14 +2,15 @@ package Models
 
 import (
 	"time"
-
+	"examen_final_febrero_golang_P4/dtos"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
 
 type Receta struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty"`
 	Nombre        string             `bson:"nombre"`
 	Categoria     string             `bson:"categoria"`
-	IdUsuario     primitive.ObjectID `bson:"usuario_id,omitempty"`
+	Ingredientes  []dtos.Ingrediente  `bson:"ingredientes"`
 	FechaCreacion time.Time          `bson:"fechaCreacion"`
 }
