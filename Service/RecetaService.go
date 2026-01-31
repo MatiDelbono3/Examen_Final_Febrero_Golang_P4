@@ -16,10 +16,10 @@ import (
 
 type RecetaServiceInterface interface {
 	Crear(req dtos.RecetaRequest) (dtos.RecetaResponse, error)
-	ListarPaginado(limit int, offset int) ([]models.Receta, error)
+	ListarPaginado(limit int, offset int) (dtos.ListarPaginadoResponse, error)
 	FiltrarRecetasPorCategoria(categoria string) ([]models.Receta, error)
 	FiltrarRecetasPorNombre(nombre string) ([]models.Receta, error)
-	FiltrarRecetasPorID(id string) ([]models.Receta, error)
+	FiltrarRecetasPorID(id string) (dtos.RecetaResponse, error)
 }
 type RecetaService struct {
 	collection     *mongo.Collection
@@ -44,14 +44,15 @@ func (service *RecetaService) Crear(req dtos.RecetaRequest) (dtos.RecetaResponse
 	}
 
 	// Documento a persistir
-	receta:models.Receta{
-		"Nombre":         req.Nombre,
-		"Categoria":      req.Categoria,
-		"Ingredientes":   req.Ingredientes,
-		"Fecha_creacion": time.Now(),
+	receta := models.Receta{
+
+		Nombre:        req.Nombre,
+		Categoria:     req.Categoria,
+		Ingredientes:  req.Ingredientes,
+		FechaCreacion: time.Now(),
 	}
 
-	result, err := service.collection.InsertOne(context.Background(), doc)
+	result, err := service.collection.InsertOne(context.Background(), receta)
 	if err != nil {
 		return dtos.RecetaResponse{}, err
 	}
@@ -69,11 +70,11 @@ func (service *RecetaService) Crear(req dtos.RecetaRequest) (dtos.RecetaResponse
 
 var total int
 
-func (service *RecetaService) ListarPaginado(limit int, offset int) ([]dtos.ListarPaginadoResponse, error) {
+func (service *RecetaService) ListarPaginado(limit int, offset int) (dtos.ListarPaginadoResponse, error) {
 
 	ctx := context.Background()
 
-	total, err := s.collection.CountDocuments(ctx, bson.M{})
+	total, err := service.collection.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return dtos.ListarPaginadoResponse{}, err
 	}
@@ -83,7 +84,7 @@ func (service *RecetaService) ListarPaginado(limit int, offset int) ([]dtos.List
 
 	cursor, err := service.collection.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
-		return nil, err
+		return dtos.ListarPaginadoResponse{}, err
 	}
 	defer cursor.Close(context.Background())
 
@@ -91,7 +92,7 @@ func (service *RecetaService) ListarPaginado(limit int, offset int) ([]dtos.List
 
 	for cursor.Next(context.Background()) {
 
-	var r models.Receta
+		var r models.Receta
 		if err := cursor.Decode(&r); err != nil {
 			return dtos.ListarPaginadoResponse{}, err
 		}
@@ -103,12 +104,13 @@ func (service *RecetaService) ListarPaginado(limit int, offset int) ([]dtos.List
 			Ingredientes:  r.Ingredientes,
 			FechaCreacion: r.FechaCreacion,
 		})
-		return dtos.ListarPaginadoResponse{
+	}
+	return dtos.ListarPaginadoResponse{
 		Total: int(total),
 		Items: items,
 	}, nil
-	}
-	}
+}
+
 func (service *RecetaService) FiltrarRecetasPorNombre(nombre string) ([]models.Receta, error) {
 
 	if nombre == "" {
@@ -123,7 +125,7 @@ func (service *RecetaService) FiltrarRecetasPorNombre(nombre string) ([]models.R
 		},
 	}
 
-	cursor, err := s.collection.Find(context.Background(), filter)
+	cursor, err := service.collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +137,7 @@ func (service *RecetaService) FiltrarRecetasPorNombre(nombre string) ([]models.R
 	}
 	return recetas, nil
 }
-	
+
 func (s *RecetaService) FiltrarRecetasPorID(id string) (dtos.RecetaResponse, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

@@ -3,7 +3,7 @@ package handlers
 import (
 	Services "examen_final_febrero_golang_P4/Service"
 	Dtos "examen_final_febrero_golang_P4/dtos"
-	"examen_final_febrero_golang_P4/models"
+
 	"strconv"
 
 	"net/http"
@@ -60,8 +60,8 @@ func (handlers *RecetaHandler) ListarPaginado(c *gin.Context) {
 }
 
 func (handlers *RecetaHandler) FiltrarRecetasPorCategoria(c *gin.Context) {
-	categoria:=c.Param("categoria")
-	resp, err := h.service.FiltrarRecetasPorNombre(id)
+	categoria := c.Param("categoria")
+	resp, err := handlers.service.FiltrarRecetasPorCategoria(categoria)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -70,8 +70,8 @@ func (handlers *RecetaHandler) FiltrarRecetasPorCategoria(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 func (handlers *RecetaHandler) FiltrarRecetasPorNombre(c *gin.Context) {
-	nombre:=c.Param("nombre")
-	resp, err := h.service.FiltrarRecetasPorNombre(id)
+	nombre := c.Param("nombre")
+	resp, err := handlers.service.FiltrarRecetasPorNombre(nombre)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -81,7 +81,7 @@ func (handlers *RecetaHandler) FiltrarRecetasPorNombre(c *gin.Context) {
 }
 func (handlers *RecetaHandler) FiltrarRecetasPorID(c *gin.Context) {
 	id := c.Param("id")
-	resp, err := h.service.FiltrarRecetasPorID(id)
+	resp, err := handlers.service.FiltrarRecetasPorID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
